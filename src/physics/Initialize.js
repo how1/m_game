@@ -26,32 +26,33 @@ export let walls = [];
 
 export const init = () => {
  	let geom = new THREE.PlaneGeometry(1000,100,32);
+ 	let geom2 = new THREE.PlaneGeometry(100,1000,32);
  	let mat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.FrontSide});
  	let floor = new THREE.Mesh(geom, mat);
 	scene.add(floor);
 
-	let wall1 = new THREE.Mesh(geom, mat);
-	let wall2 = new THREE.Mesh(geom, mat);
-	let ceiling = new THREE.Mesh(geom, mat);
+	let wall1 = new THREE.Mesh(geom2, mat);
+	let wall2 = new THREE.Mesh(geom2, mat);
+	//let ceiling = new THREE.Mesh(geom, mat);
 
-	// scene.add(wall1);
-	// scene.add(wall2);
+	scene.add(wall1);
+	scene.add(wall2);
 	// scene.add(ceiling);
 
 	walls.push(wall1);
 	walls.push(wall2);
 	walls.push(floor);
-	walls.push(ceiling);
+	//walls.push(ceiling);
 
 	let characterGeom = new THREE.PlaneGeometry(5,20, 32);
 	let characterMat = new THREE.MeshBasicMaterial({color: 0xffccff, side: THREE.FrontSide});
 	character = new THREE.Mesh(characterGeom, characterMat);
 	scene.add(character);
 
-	wall1.position.x = -100;
+	wall1.position.x = -300;
 	floor.position.y = -100;
-	wall2.position.x = 100;
-	ceiling.position.y = 100;
+	wall2.position.x = 300;
+	//ceiling.position.y = 100;
 
  	camera.position.z += 100;
 }
