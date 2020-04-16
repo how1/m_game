@@ -19,14 +19,14 @@ let jumpFrame = false;
 let zeroTol = 0.01;
 let elevation = 0;
 let maxJumpHeight = 50;
-let jumpSpeed = 1.5;
+let jumpSpeed = 2.5;
 let hanging = false;
 
 
 export const updateCharacter = () => {
     character = Initialize.character;
     if (getSAT(character, Initialize.obstacle)){
-        console.log('green', character.mesh.position);
+        console.log('green');
         Initialize.obstacle.mesh.material = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.FrontSide});
     }
     else{
@@ -212,17 +212,18 @@ const addKey = (key) => {
     keyEvents.unshift(key);
 }
 
-export const getRotatedPoints = (obj) => {
+export const getRotatedPoints = (mesh) => {
     let corners = [
-        new THREE.Vector3(obj.position.x - obj.geometry.parameters.width/2, obj.position.y + obj.geometry.parameters.height/2, obj.position.z),
-        new THREE.Vector3(obj.position.x + obj.geometry.parameters.width/2, obj.position.y - obj.geometry.parameters.height/2, obj.position.z),
-        new THREE.Vector3(obj.position.x - obj.geometry.parameters.width/2, obj.position.y - obj.geometry.parameters.height/2, obj.position.z),
-        new THREE.Vector3(obj.position.x + obj.geometry.parameters.width/2, obj.position.y + obj.geometry.parameters.height/2, obj.position.z)
+        new THREE.Vector3(-mesh.geometry.parameters.width/2, mesh.geometry.parameters.height/2, mesh.position.z),
+        new THREE.Vector3(mesh.geometry.parameters.width/2, mesh.geometry.parameters.height/2, mesh.position.z),
+        new THREE.Vector3(mesh.geometry.parameters.width/2, -mesh.geometry.parameters.height/2, mesh.position.z),
+        new THREE.Vector3(-mesh.geometry.parameters.width/2, -mesh.geometry.parameters.height/2, mesh.position.z)
     ];
     var axis = new THREE.Vector3( 0, 0, 1 );
-    var angle = obj.rotation.z;
+    var angle = mesh.rotation.z;
     for (var i = corners.length - 1; i >= 0; i--) {
         corners[i].applyAxisAngle( axis, angle );
+        corners[i].add(mesh.position);
     }
     return corners;
 }
@@ -255,7 +256,7 @@ export const getAxes = (obj) => {
     return axes;
 }
 
-export const getProjection = (axis, obj) => {
+export const getProjection = (axis, obj, pos) => {
     let min = axis.dot(obj.points[0]);
     let max = min;
     for (var i = 0; i < obj.points.length; i++) {
@@ -263,28 +264,20 @@ export const getProjection = (axis, obj) => {
         if (p < min) min = p;
         else if ( p > max) max = p;
     }
-    // debugger;
     let vec = new THREE.Vector3(min, max, 0);
-    // if (obj.mesh.position.y < 0) {
-    vec.add(obj.mesh.position);
-    // } else {
-        // vec.sub(obj.mesh.position);
-    // }
     return [vec.x, vec.y];
 }
 
-let posText = document.createElement
-
 export const getSAT = (a, b) => {
+    Initialize.character.points = getRotatedPoints(Initialize.character.mesh);
+    Initialize.obstacle.points = getRotatedPoints(Initialize.obstacle.mesh);
     let axesA = getAxes(a);
     let axesB = getAxes(b);
     let projA = [];
     let projB = [];
     for (var i = 0; i < axesA.length; i++) {
-        // console.log(axesA[i]);
         let aP = getProjection(axesA[i], a);
         let bP = getProjection(axesA[i], b);
-        console.log(axesA[i].x, axesA[i].y, aP, bP);
         if (aP[0] > bP[1]) return false;
         if (aP[1] < bP[0]) return false
     }
