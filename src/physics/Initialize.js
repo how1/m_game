@@ -29,19 +29,20 @@ export let obstacle;
 export const init = () => {
  	let geom = new THREE.PlaneGeometry(1000,100,32);
  	let geom2 = new THREE.PlaneGeometry(100,1000,32);
- 	let geom3 = new THREE.PlaneGeometry(20, 20, 32);
+ 	let geom3 = new THREE.PlaneGeometry(2000, 200, 32);
  	let mat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.FrontSide});
  	let floor = new THREE.Mesh(geom, mat);
  	obstacle = new THREE.Mesh(geom3, mat);
- 	obstacle.position.x = 200;
- 	obstacle.position.y = 40;
+ 	obstacle.position.x = -200;
+ 	obstacle.position.y = -50;
  	console.log(obstacle.position);
 	scene.add(floor);
 	scene.add(obstacle);
 	obstacle = Physics.newObject(obstacle);
 	console.log(obstacle.points);
-	obstacle.rotate(Math.PI/4);
+	obstacle.rotate(-Math.PI/3);
 	console.log(obstacle.points);
+	// console.log(new THREE.Vector3().copy(obstacle.points[0]).sub(obstacle.points[1]).normalize());
 	let wall1 = new THREE.Mesh(geom2, mat);
 	let wall2 = new THREE.Mesh(geom2, mat);
 	//let ceiling = new THREE.Mesh(geom, mat);
@@ -50,8 +51,8 @@ export const init = () => {
 	scene.add(wall2);
 	// scene.add(ceiling);
 
-	walls.push(wall1);
-	walls.push(wall2);
+	// walls.push(wall1);
+	// walls.push(wall2);
 	walls.push(floor);
 	//walls.push(ceiling);
 
@@ -66,6 +67,6 @@ export const init = () => {
 	wall2.position.x = 300;
 	//ceiling.position.y = 100;
 
- 	camera.position.z += 100;
+ 	camera.position.z += 150;
 }
 

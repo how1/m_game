@@ -14,38 +14,40 @@ let yAcceleration = 1.1;
 let xDeceleration = .9;
 let xMaxSpeed = 1;
 let yMaxSpeed = 1;
+let xMaxJumpingSpeed = .5;
 let jumping = false;
 let jumpFrame = false;
 let zeroTol = 0.01;
 let elevation = 0;
 let maxJumpHeight = 50;
-let jumpSpeed = 2.5;
+let jumpSpeed = 1.5;
 let hanging = false;
-
+let sliding = false;
+let jumpKey = false;
+let gravityThisTurn = gravity;
 
 export const updateCharacter = () => {
+    Initialize.camera.position.x = Initialize.character.mesh.position.x;
+    Initialize.camera.position.y = Initialize.character.mesh.position.y;
     character = Initialize.character;
-    if (getSAT(character, Initialize.obstacle)){
-        console.log('green');
-        Initialize.obstacle.mesh.material = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.FrontSide});
-    }
-    else{
-        Initialize.obstacle.mesh.material = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.FrontSide});
-    }
+    gravityThisTurn = gravity;
+    getSAT(character, Initialize.obstacle);
     // scene.remove(Initialize.obstacle);
     if (Math.abs(xVelocity) < zeroTol) xVelocity = 0;
     getInput();
 	collisions = CollisionDetection.getCollisions(Initialize.walls, Initialize.character.mesh);
-    let gravityThisTurn = gravity;
+    if (collisions.length == 0) jumping = true;
     for (var i = 0; i < collisions.length; i++) {
         if (collisions[i] == 'top') {
             if (!jumpFrame){
+                sliding = false;
                 hanging = false;
                 jumping = false;
                 gravityThisTurn = 0;
                 yVelocity = 0;
             }
         } else if (collisions[i] == 'left'){
+            if (hanging) hang();
             if (!jumpFrame){
                 if (xVelocity > 0) xVelocity = 0;
             }
@@ -53,6 +55,7 @@ export const updateCharacter = () => {
                 hang();
             }
         } else if (collisions[i] == 'right'){
+            if (hanging) hang();
             if (!jumpFrame){
                 if (xVelocity < 0) xVelocity = 0;
             }
@@ -76,11 +79,33 @@ const getInput = () => {
         }
     }
     if (keyEvents[0] == 'left') {
+        for (var i = collisions.length - 1; i >= 0; i--) {
+            if (collisions[i] == 'left')  hanging = true;
+            else if (collisions[i] == 'right') hanging =false;
+        }
         goLeft();
     } else if (keyEvents[0] == 'right'){
+        for (var i = collisions.length - 1; i >= 0; i--) {
+            if (collisions[i] == 'right') hanging = true;
+            else if (collisions[i] == 'left') hanging = false;
+        }
         goRight();
     } else if (keyEvents[0] == 'up'){
-        jump();
+        // console.log(keyEvents, jumpKey);
+        if (keyEvents.length == 1 && jumpKey && !jumping) {
+            console.log("skid here now you skidher now");
+            skid();
+        }
+        else {
+            jump();
+        }
+        for (var i = keyEvents.length - 1; i >= 0; i--) {
+            if (keyEvents[i] == 'left') {
+                goLeft();
+            } else if (keyEvents[i] == 'right') {
+                goRight();
+            }
+        }
     }
     if ((!keyEvents.includes('up') && jumping) || character.mesh.position.y > elevation + maxJumpHeight){
         gravity = GRAVITATION;
@@ -90,11 +115,21 @@ const getInput = () => {
 const goLeft = () => {
     if (xVelocity > 0) skid();
     else {
-        if (xVelocity == 0) xVelocity = -0.3;
-        if (xVelocity < 0){
-            if (Math.abs(xVelocity) < xMaxSpeed) {
-                // if (!jumping)
-                    xVelocity *= xAcceleration;
+        if (!jumping) {
+            if (xVelocity == 0) xVelocity = -0.3;
+            if (xVelocity < 0){
+                if (Math.abs(xVelocity) < xMaxSpeed) {
+                    // if (!jumping)
+                        xVelocity *= xAcceleration;
+                }
+            }
+        } else {
+            if (xVelocity == 0) xVelocity = -0.3;
+            if (xVelocity < 0){
+                if (Math.abs(xVelocity) < xMaxJumpingSpeed) {
+                    // if (!jumping)
+                        xVelocity *= (xAcceleration);
+                }
             }
         }
     }
@@ -103,47 +138,59 @@ const goLeft = () => {
 const goRight = () => {
     if (xVelocity < 0) skid();
     else {
-        if (xVelocity == 0) xVelocity = 0.3;
-        else if (xVelocity > 0){
-            if (Math.abs(xVelocity) < xMaxSpeed) {
-                // if (!jumping)
-                    xVelocity *= xAcceleration;
+        if (!jumping) {
+            if (xVelocity == 0) xVelocity = 0.3;
+            if (xVelocity > 0){
+                if (Math.abs(xVelocity) < xMaxSpeed) {
+                        xVelocity *= xAcceleration;
+                }
+            }
+        } else {
+            if (xVelocity == 0) xVelocity = 0.3;
+            if (xVelocity > 0){
+                if (Math.abs(xVelocity) < xMaxJumpingSpeed) {
+                        xVelocity *= (xAcceleration);
+                }
             }
         }
     }
 }
 
 const jump = () => {
-    if (!jumping){
-        if (hanging) {
-            console.log('hanging');
-            hanging = false;
-            for (var i = collisions.length - 1; i >= 0; i--) {
-                if (collisions[i] == 'left') {
-                    xVelocity = -.3;
-                    console.log('go right');
-                } else if (collisions [i] == 'right') {
-                    xVelocity = .3;
-                    console.log('go left');
+    if (!jumpKey){
+        jumpKey = true;
+        if (!jumping){
+            if (hanging) {
+                if (yVelocity > 0) yVelocity *= 1.5;
+                hanging = false;
+                for (var i = collisions.length - 1; i >= 0; i--) {
+                    if (collisions[i] == 'left') {
+                        xVelocity = -.35;
+                    } else if (collisions [i] == 'right') {
+                        xVelocity = .35;
+                    }
                 }
+                yVelocity = jumpSpeed * .6;
+                jumping = true;
+                jumpFrame = true;
+                gravity = 0;
+                elevation = character.mesh.position.y;
+            } else if (yVelocity == 0 && !jumping){
+                yVelocity = jumpSpeed;
+                jumping = true;
+                jumpFrame = true;
+                gravity = 0;
+                elevation = character.mesh.position.y;
+            } else if (sliding) {
+                sliding = false;
+                yVelocity = jumpSpeed;
+                jumping = true;
+                jumpFrame = true;
+                gravity = 0;
+                elevation = character.mesh.position.y;
             }
-            // if (keyEvents[1] == 'left'){
-            //     xVelocity = .3;
-            // } else if (keyEvents[1] == 'right'){
-            //     console.log('jump left');
-            //     xVelocity = -.3;
-            // }
-            yVelocity = jumpSpeed;
-            jumping = true;
-            jumpFrame = true;
-            gravity = 0;
-            elevation = character.mesh.position.y;
-        } else if (yVelocity == 0 && !jumping){
-            yVelocity = jumpSpeed;
-            jumping = true;
-            jumpFrame = true;
-            gravity = 0;
-            elevation = character.mesh.position.y;
+        } else if (jumping) {
+
         }
     }
 }
@@ -151,19 +198,26 @@ const jump = () => {
 const hang = () => {
     hanging = true;
     jumping = false;
+    // if (!sliding){
+        // console.log("go down here ");
     if (yVelocity < 0){
-        yVelocity = -.2;
+        yVelocity = -0.4;
     }
+    // }
 }
 
 const skid = () => {
-    if (keyEvents.length == 0){
-        xVelocity *= 0.95;
+    if (sliding){
+        if (keyEvents.length != 0) {
+            xVelocity *= 0.5;
+        }
     } else {
-        xVelocity *= 0.9;
+        if (keyEvents.length == 0) {
+            xVelocity *= 0.95;
+        } else {
+            xVelocity *= 0.9;
+        }
     }
-    // shortSkid
-    // longSkid
 }
 
 
@@ -191,6 +245,7 @@ function onDocumentKeyUp(event) {
         removeKey('right');
     } else if (keyCode == 38 || keyCode == 90) {
         removeKey('up');
+        jumpKey = false;
     }
 
 }
@@ -275,17 +330,94 @@ export const getSAT = (a, b) => {
     let axesB = getAxes(b);
     let projA = [];
     let projB = [];
+    let minO = 100;
+    let axis = new THREE.Vector3();
     for (var i = 0; i < axesA.length; i++) {
         let aP = getProjection(axesA[i], a);
         let bP = getProjection(axesA[i], b);
-        if (aP[0] > bP[1]) return false;
-        if (aP[1] < bP[0]) return false
+        if (aP[0] > bP[1]) {
+            sliding = false;
+            return false;
+        }
+        else if (aP[1] < bP[0]) {
+            sliding = false;
+            return false
+        }
+        else {
+            if (aP[1] > bP[0]){
+                let o = Math.abs(aP[1] - bP[0]);
+                if (minO > o){
+                    minO = o; 
+                    axis = axesA[i];
+                } 
+            } else if (aP[0] < bP[1]) {
+                let o = Math.abs(aP[0] - bP[1]);
+                if (minO > o) {
+                    minO = o;
+                    axis = axesA[i];
+                }
+            }
+        }
     }
     for (var i = 0; i < axesB.length; i++) {
         let aP = getProjection(axesB[i], a);
         let bP = getProjection(axesB[i], b);
-        if (aP[0] > bP[1]) return false;
-        if (aP[1] < bP[0]) return false;
+        if (aP[0] > bP[1]) {
+            sliding = false;
+            return false;
+        }
+        else if (aP[1] < bP[0]) {
+            sliding = false;
+            return false;
+        }
+        else {
+            if (aP[1] > bP[0]){
+                let o = Math.abs(aP[1] - bP[0]);
+                if (minO > o) {
+                    minO = o; 
+                    axis = axesB[i];
+                }
+            } else if (aP[0] < bP[1]) {
+                let o = Math.abs(aP[0] - bP[1]);
+                if (minO > o) {
+                    minO = o;
+                    axis = axesB[i];
+                }
+            } 
+        }
     }
+    if (axis.y < 0) {
+        sliding = true;
+    }
+    if (collisions.length == 0){
+        console.log('no cols');
+        let tmp = new THREE.Vector3();
+        tmp.copy(axis);
+        let Vn = tmp.multiplyScalar(axis.dot(new THREE.Vector3(xVelocity, yVelocity, 0)));
+        let temp = new THREE.Vector3(xVelocity, yVelocity, 0);
+        let Vt = temp.sub(Vn);
+        let newVelocityVector = Vt.sub(Vn.multiplyScalar(.001));
+        xVelocity = newVelocityVector.x;
+        yVelocity = newVelocityVector.y;
+    }
+    if (collisions.length > 0){
+        yVelocity = 0;
+        gravityThisTurn = 0;
+        let angle = THREE.Math.radToDeg(b.mesh.rotation.z);
+        console.log(angle);
+        let otherAngle = 180 - angle - 90;
+        let leg = minO;
+        let hypo = leg / Math.sin(THREE.Math.degToRad(otherAngle));
+        let minVector = new THREE.Vector3(0,1,0).multiplyScalar(hypo);
+        Initialize.character.mesh.position.add(minVector);
+    } else {
+        let minVector = axis.multiplyScalar(minO).negate();
+        Initialize.character.mesh.position.add(minVector);
+    }
+    jumping = false;
+    // let tmpVec = new THREE.Vector3(xVelocity, yVelocity, 0);
+    // perpAxis.multiplyScalar(tmpVec.length());
+    // xVelocity = perpAxis.x;
+    // yVelocity = perpAxis.y;
     return true;
 }

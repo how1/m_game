@@ -26,27 +26,33 @@ export let checkBoundingBoxes = (a, b) => {
 	};
 
 	let dx=(r1.x+r1.w/2)-(r2.x+r2.w/2);
-    let dy=(r1.y+r1.h/2)-(r2.y+r2.h/2);
-    let width=(r1.w+r2.w)/2;
-    let height=(r1.h+r2.h)/2;
-    let crossWidth=width*dy;
-    let crossHeight=height*dx;
-    let collision='none';
-    //
-    if(Math.abs(dx)<=width && Math.abs(dy)<=height){
-        if(crossWidth>crossHeight){
-           	if (crossWidth > (-crossHeight)){
-           		collision = 'bottom';
-           	} else {
-           		collision = 'right';
-           	}
-       } else {
-            if (crossWidth > (-crossHeight)){
-            	collision = 'left';
-            } else {
-            	collision = 'top';
-            }
-        }
-    }
-    return collision;
+  let dy=(r1.y+r1.h/2)-(r2.y+r2.h/2);
+  let width=(r1.w+r2.w)/2;
+  let height=(r1.h+r2.h)/2;
+  let crossWidth=width*dy;
+  let crossHeight=height*dx;
+  let collision='none';
+  //
+  if(Math.abs(dx)<=width && Math.abs(dy)<=height){
+      if(crossWidth>crossHeight){
+         	if (crossWidth > (-crossHeight)){
+            b.position.y -= (Math.abs((a.position.y - r1.h/2) - (b.position.y + r2.h/2)));
+         		collision = 'bottom';
+         	} else {
+            b.position.x += (Math.abs((a.position.x + r1.w/2) - (b.position.x - r2.w/2)));
+         		collision = 'right';
+         	}
+     } else {
+          if (crossWidth > (-crossHeight)){
+            b.position.x -= (Math.abs((a.position.x - r1.w/2) - (b.position.x + r2.w/2)));
+          	collision = 'left';
+          } else {
+            let dif = (Math.abs((a.position.y + r1.h/2) - (b.position.y - r2.h/2)));
+            console.log(dif);
+            b.position.y += dif;
+          	collision = 'top';
+          }
+      }
+  }
+  return collision;
 }
