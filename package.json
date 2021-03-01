@@ -33,7 +33,7 @@
     "package": "^1.0.1",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.22.0",
-    "three": "^0.97.0",
+    "three": "^0.125.0",
     "three-orbit-controls": "^82.1.0",
     "three-orbitcontrols-ts": "^0.1.2",
     "webpack": "^4.22.0",
